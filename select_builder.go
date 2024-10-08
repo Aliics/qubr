@@ -30,13 +30,21 @@ func Select[T any](ofType T) SelectBuilder[T] {
 }
 
 func (s SelectBuilder[T]) From(tableName string) SelectBuilder[T] {
+	if s.from.schema != "" && s.from.tableName != "" {
+		s.err = ErrTableNameAlreadySet
+		return s
+	}
+
 	parts := strings.Split(tableName, ".")
 	if tableName == "" || len(parts) > 2 {
 		s.err = ErrInvalidTableName{tableName}
 		return s
 	}
 
-	s.err = nil
+	if errors.Is(s.err, ErrInvalidTableName{""}) {
+		// Clear the initial table name state.
+		s.err = nil
+	}
 
 	if len(parts) > 1 {
 		// Schema was provided in tableName, it comes before the actual table name.
@@ -188,6 +196,8 @@ func (s SelectBuilder[T]) appendToFieldOperationTree(assign func(next *fieldOper
 }
 
 var (
+	ErrTableNameAlreadySet = errors.New("table name has already been set")
+
 	ErrDoubleWhereClause  = errors.New("where clause is already present")
 	ErrMissingWhereClause = errors.New("where clause is not yet present")
 
