@@ -17,21 +17,26 @@ type SelectBuilder[T any] struct {
 
 	fieldOperationTree fieldOperationTree
 
+	limit *uint64
+
 	err error
 }
 
 func Select[T any](ofType T) SelectBuilder[T] {
 	return SelectBuilder[T]{
 		ofType: ofType,
+		err:    ErrInvalidTableName{""}, // We need to set that the table has no name for the initial state.
 	}
 }
 
 func (s SelectBuilder[T]) From(tableName string) SelectBuilder[T] {
 	parts := strings.Split(tableName, ".")
-	if len(parts) == 0 || len(parts) > 2 {
+	if tableName == "" || len(parts) > 2 {
 		s.err = ErrInvalidTableName{tableName}
 		return s
 	}
+
+	s.err = nil
 
 	if len(parts) > 1 {
 		// Schema was provided in tableName, it comes before the actual table name.
@@ -65,6 +70,18 @@ func (s SelectBuilder[T]) Or(op FieldOperation) SelectBuilder[T] {
 	return s.appendToFieldOperationTree(func(next *fieldOperationTree) {
 		next.or = &fieldOperationTree{op: op}
 	})
+}
+
+func (s SelectBuilder[T]) Limit(n uint64) SelectBuilder[T] {
+	if s.limit != nil {
+		// This was probably not set intentionally by the caller, and it's sort of undefined behaviour.
+		// Let's help them out with a useful error.
+		s.err = ErrLimitAlreadySet
+		return s
+	}
+
+	s.limit = &n
+	return s
 }
 
 func (s SelectBuilder[T]) Build() (string, error) {
@@ -133,7 +150,12 @@ func (s SelectBuilder[T]) Build() (string, error) {
 		whereClause = sb.String()
 	}
 
-	return fmt.Sprintf("SELECT %s FROM %s%s;", fields, tableName, whereClause), nil
+	var limit string
+	if s.limit != nil {
+		limit = fmt.Sprintf(" LIMIT %d", *s.limit)
+	}
+
+	return fmt.Sprintf("SELECT %s FROM %s%s%s;", fields, tableName, whereClause, limit), nil
 }
 
 func (s SelectBuilder[T]) appendToFieldOperationTree(assign func(next *fieldOperationTree)) SelectBuilder[T] {
@@ -168,6 +190,8 @@ func (s SelectBuilder[T]) appendToFieldOperationTree(assign func(next *fieldOper
 var (
 	ErrDoubleWhereClause  = errors.New("where clause is already present")
 	ErrMissingWhereClause = errors.New("where clause is not yet present")
+
+	ErrLimitAlreadySet = errors.New("limit value has already been set")
 )
 
 // ErrInvalidTableName occurs when a string provided cannot be used as a table name.
