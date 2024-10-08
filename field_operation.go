@@ -9,6 +9,10 @@ type FieldOperation struct {
 	ValueRaw  string
 }
 
+func (f FieldOperation) String() string {
+	return fmt.Sprintf(`"%s" %s %s`, f.FieldName, f.Operator, f.ValueRaw)
+}
+
 type Operator uint8
 
 const (
@@ -19,6 +23,25 @@ const (
 	OperatorGreaterThanOrEqual
 	OperatorLessThanOrEqual
 )
+
+func (o Operator) String() string {
+	var s string
+	switch o {
+	case OperatorEqual:
+		s = "="
+	case OperatorNotEqual:
+		s = "!="
+	case OperatorGreaterThan:
+		s = ">"
+	case OperatorLessThan:
+		s = "<"
+	case OperatorGreaterThanOrEqual:
+		s = ">="
+	case OperatorLessThanOrEqual:
+		s = "<="
+	}
+	return s
+}
 
 type fieldOperationTree struct {
 	op FieldOperation
