@@ -157,6 +157,36 @@ func (s SelectBuilder[T]) BuildQuery() (string, error) {
 	return fmt.Sprintf("SELECT %s FROM %s%s%s;", fields, tableName, whereClause, limit), nil
 }
 
+func (s SelectBuilder[T]) Query(db *sql.DB) ([]T, error) {
+	return s.QueryContext(context.Background(), db)
+}
+
+func (s SelectBuilder[T]) QueryContext(ctx context.Context, db *sql.DB) ([]T, error) {
+	query, err := s.BuildQuery()
+	if err != nil {
+		return nil, err
+	}
+
+	return QueryContext[T](ctx, db, query)
+}
+
+func (s SelectBuilder[T]) GetOne(db *sql.DB) (*T, error) {
+	return s.GetOneContext(context.Background(), db)
+}
+
+func (s SelectBuilder[T]) GetOneContext(ctx context.Context, db *sql.DB) (*T, error) {
+	ts, err := s.QueryContext(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(ts) == 0 {
+		return nil, ErrNoRows
+	}
+
+	return &ts[0], nil
+}
+
 func (s SelectBuilder[T]) appendToFieldOperationTree(assign func(next *fieldOperationTree)) SelectBuilder[T] {
 	if s.fieldOperationTree == emptyFieldOperationTree {
 		s.err = ErrMissingWhereClause
@@ -184,71 +214,6 @@ func (s SelectBuilder[T]) appendToFieldOperationTree(assign func(next *fieldOper
 	}
 
 	return s
-}
-
-func (s SelectBuilder[T]) Query(db *sql.DB) ([]T, error) {
-	return s.QueryContext(context.Background(), db)
-}
-
-func (s SelectBuilder[T]) QueryContext(ctx context.Context, db *sql.DB) ([]T, error) {
-	query, err := s.BuildQuery()
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := db.QueryContext(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	selectType := reflect.TypeFor[T]()
-
-	// No way to determine the number of rows, other than by simply scanning one-by-one.
-	var mapped []T
-	for rows.Next() {
-		mappedValue := reflect.ValueOf(new(T)).Elem()
-
-		numField := selectType.NumField()
-
-		// Create pointers for "Scan" to populate row values onto a temporary "values" array.
-		values := make([]any, numField)
-		for i := range numField {
-			field := mappedValue.Field(i).Interface()
-			values[i] = &field
-		}
-
-		// Pull out the row values.
-		if err = rows.Scan(values...); err != nil {
-			return nil, err
-		}
-
-		// Set the row values onto a new "T", field by field.
-		for i := range numField {
-			mappedValue.Field(i).Set(reflect.ValueOf(*values[i].(*any)))
-		}
-
-		// Finally, we have our new element
-		mapped = append(mapped, mappedValue.Interface().(T))
-	}
-
-	return mapped, nil
-}
-
-func (s SelectBuilder[T]) GetOne(db *sql.DB) (*T, error) {
-	return s.GetOneContext(context.Background(), db)
-}
-
-func (s SelectBuilder[T]) GetOneContext(ctx context.Context, db *sql.DB) (*T, error) {
-	ts, err := s.QueryContext(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(ts) == 0 {
-		return nil, ErrNoRows
-	}
-
-	return &ts[0], nil
 }
 
 var (
