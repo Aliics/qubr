@@ -1,4 +1,4 @@
-package qube
+package qubr
 
 import (
 	"github.com/stretchr/testify/assert"

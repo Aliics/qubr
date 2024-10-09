@@ -1,4 +1,4 @@
-module qube
+module qubr
 
 go 1.23
 

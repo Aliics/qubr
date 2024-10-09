@@ -1,4 +1,4 @@
-package qube
+package qubr
 
 type tableName struct {
 	schema    string
