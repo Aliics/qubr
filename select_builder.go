@@ -3,7 +3,6 @@ package qubr
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -25,67 +24,59 @@ func Select[T any]() SelectBuilder[T] {
 	}
 }
 
-func (s SelectBuilder[T]) From(tableName string) SelectBuilder[T] {
-	if s.from.schema != "" && s.from.tableName != "" {
-		s.err = ErrTableNameAlreadySet
-		return s
+func (b SelectBuilder[T]) From(tableName string) SelectBuilder[T] {
+	if b.from.schema != "" && b.from.tableName != "" {
+		b.err = ErrTableNameAlreadySet
+		return b
+	}
+	t, err := newTableNameFromString(tableName)
+	if err != nil {
+		b.err = err
+		return b
 	}
 
-	parts := strings.Split(tableName, ".")
-	if tableName == "" || len(parts) > 2 {
-		s.err = ErrInvalidTableName{tableName}
-		return s
-	}
-
-	if len(parts) > 1 {
-		// Schema was provided in tableName, it comes before the actual table name.
-		s.from.schema = parts[0]
-	}
-
-	// Whether a schema is provided or not, the table name is always the last part.
-	s.from.tableName = parts[len(parts)-1]
-
-	return s
+	b.from = *t
+	return b
 }
 
-func (s SelectBuilder[T]) Where(op FieldOperation) SelectBuilder[T] {
-	if s.fieldOperationTree != emptyFieldOperationTree {
-		s.err = ErrDoubleWhereClause
-		return s
+func (b SelectBuilder[T]) Where(op FieldOperation) SelectBuilder[T] {
+	if b.fieldOperationTree != emptyFieldOperationTree {
+		b.err = ErrDoubleWhereClause
+		return b
 	}
 
-	s.fieldOperationTree.op = op
+	b.fieldOperationTree.op = op
 
-	return s
+	return b
 }
 
-func (s SelectBuilder[T]) And(op FieldOperation) SelectBuilder[T] {
-	return s.appendToFieldOperationTree(func(next *fieldOperationTree) {
+func (b SelectBuilder[T]) And(op FieldOperation) SelectBuilder[T] {
+	return b.appendToFieldOperationTree(func(next *fieldOperationTree) {
 		next.and = &fieldOperationTree{op: op}
 	})
 }
 
-func (s SelectBuilder[T]) Or(op FieldOperation) SelectBuilder[T] {
-	return s.appendToFieldOperationTree(func(next *fieldOperationTree) {
+func (b SelectBuilder[T]) Or(op FieldOperation) SelectBuilder[T] {
+	return b.appendToFieldOperationTree(func(next *fieldOperationTree) {
 		next.or = &fieldOperationTree{op: op}
 	})
 }
 
-func (s SelectBuilder[T]) Limit(n uint64) SelectBuilder[T] {
-	if s.limit != nil {
+func (b SelectBuilder[T]) Limit(n uint64) SelectBuilder[T] {
+	if b.limit != nil {
 		// This was probably not set intentionally by the caller, and it's sort of undefined behaviour.
 		// Let's help them out with a useful error.
-		s.err = ErrLimitAlreadySet
-		return s
+		b.err = ErrLimitAlreadySet
+		return b
 	}
 
-	s.limit = &n
-	return s
+	b.limit = &n
+	return b
 }
 
-func (s SelectBuilder[T]) BuildQuery() (query string, args []any, err error) {
-	if s.err != nil {
-		return "", nil, s.err
+func (b SelectBuilder[T]) BuildQuery() (query string, args []any, err error) {
+	if b.err != nil {
+		return "", nil, b.err
 	}
 
 	var fields string
@@ -106,30 +97,24 @@ func (s SelectBuilder[T]) BuildQuery() (query string, args []any, err error) {
 		fields = sb.String()
 	}
 
-	var tableName string
-	{
-		if s.from.schema != "" {
-			tableName = `"` + s.from.schema + `".`
-		}
-		tableName += `"` + s.from.tableName + `"`
-	}
+	tableName := b.from.String()
 
 	// The WHERE clause present. Includes building the AND/OR nodes.
 	// Since this is not obviously sized, we are going to use a strings.Builder for efficiency.
 	var whereClause string
-	if s.fieldOperationTree != emptyFieldOperationTree {
+	if b.fieldOperationTree != emptyFieldOperationTree {
 		sb := strings.Builder{}
 
 		sb.WriteString(" WHERE ")
 
-		query, data := s.fieldOperationTree.op.QueryData()
+		query, data := b.fieldOperationTree.op.QueryData()
 		sb.WriteString(query)
 		args = append(args, data)
 
 		// Walk down the tree for each "and" and "or" branch.
 		// Write the op node out once discovered. Otherwise, we are done.
 
-		next := s.fieldOperationTree
+		next := b.fieldOperationTree
 		for {
 			if next.and == nil && next.or == nil {
 				// Nothing left to be written.
@@ -152,20 +137,20 @@ func (s SelectBuilder[T]) BuildQuery() (query string, args []any, err error) {
 	}
 
 	var limit string
-	if s.limit != nil {
+	if b.limit != nil {
 		limit = " LIMIT ?"
-		args = append(args, *s.limit)
+		args = append(args, *b.limit)
 	}
 
 	return fmt.Sprintf("SELECT %s FROM %s%s%s;", fields, tableName, whereClause, limit), args, nil
 }
 
-func (s SelectBuilder[T]) Query(db *sql.DB) ([]T, error) {
-	return s.QueryContext(context.Background(), db)
+func (b SelectBuilder[T]) Query(db *sql.DB) ([]T, error) {
+	return b.QueryContext(context.Background(), db)
 }
 
-func (s SelectBuilder[T]) QueryContext(ctx context.Context, db *sql.DB) ([]T, error) {
-	query, args, err := s.BuildQuery()
+func (b SelectBuilder[T]) QueryContext(ctx context.Context, db *sql.DB) ([]T, error) {
+	query, args, err := b.BuildQuery()
 	if err != nil {
 		return nil, err
 	}
@@ -173,12 +158,12 @@ func (s SelectBuilder[T]) QueryContext(ctx context.Context, db *sql.DB) ([]T, er
 	return QueryContext[T](ctx, db, query, args...)
 }
 
-func (s SelectBuilder[T]) GetOne(db *sql.DB) (*T, error) {
-	return s.GetOneContext(context.Background(), db)
+func (b SelectBuilder[T]) GetOne(db *sql.DB) (*T, error) {
+	return b.GetOneContext(context.Background(), db)
 }
 
-func (s SelectBuilder[T]) GetOneContext(ctx context.Context, db *sql.DB) (*T, error) {
-	ts, err := s.QueryContext(ctx, db)
+func (b SelectBuilder[T]) GetOneContext(ctx context.Context, db *sql.DB) (*T, error) {
+	ts, err := b.QueryContext(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -190,16 +175,16 @@ func (s SelectBuilder[T]) GetOneContext(ctx context.Context, db *sql.DB) (*T, er
 	return &ts[0], nil
 }
 
-func (s SelectBuilder[T]) appendToFieldOperationTree(assign func(next *fieldOperationTree)) SelectBuilder[T] {
-	if s.fieldOperationTree == emptyFieldOperationTree {
-		s.err = ErrMissingWhereClause
-		return s
+func (b SelectBuilder[T]) appendToFieldOperationTree(assign func(next *fieldOperationTree)) SelectBuilder[T] {
+	if b.fieldOperationTree == emptyFieldOperationTree {
+		b.err = ErrMissingWhereClause
+		return b
 	}
 
 	// Starting from our top node, "where", we walk down either the "and" or "or" branch.
 	// Once we reach the bottom, we assign.
 
-	next := &s.fieldOperationTree
+	next := &b.fieldOperationTree
 	for {
 		if next.and != nil {
 			next = next.and
@@ -216,25 +201,5 @@ func (s SelectBuilder[T]) appendToFieldOperationTree(assign func(next *fieldOper
 		break
 	}
 
-	return s
-}
-
-var (
-	ErrTableNameAlreadySet = errors.New("table name has already been set")
-
-	ErrDoubleWhereClause  = errors.New("where clause is already present")
-	ErrMissingWhereClause = errors.New("where clause is not yet present")
-
-	ErrLimitAlreadySet = errors.New("limit value has already been set")
-
-	ErrNoRows = errors.New("get resulted in no rows")
-)
-
-// ErrInvalidTableName occurs when a string provided cannot be used as a table name.
-type ErrInvalidTableName struct {
-	Name string
-}
-
-func (e ErrInvalidTableName) Error() string {
-	return fmt.Sprintf(`"%s" is not a valid table name`, e.Name)
+	return b
 }
