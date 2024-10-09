@@ -1,4 +1,4 @@
-module qubr
+module github.com/aliics/qubr
 
 go 1.23
 
