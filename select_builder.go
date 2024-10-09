@@ -83,9 +83,9 @@ func (s SelectBuilder[T]) Limit(n uint64) SelectBuilder[T] {
 	return s
 }
 
-func (s SelectBuilder[T]) BuildQuery() (string, error) {
+func (s SelectBuilder[T]) BuildQuery() (query string, args []any, err error) {
 	if s.err != nil {
-		return "", s.err
+		return "", nil, s.err
 	}
 
 	var fields string
@@ -121,29 +121,31 @@ func (s SelectBuilder[T]) BuildQuery() (string, error) {
 		sb := strings.Builder{}
 
 		sb.WriteString(" WHERE ")
-		sb.WriteString(s.fieldOperationTree.op.String())
+
+		query, data := s.fieldOperationTree.op.QueryData()
+		sb.WriteString(query)
+		args = append(args, data)
 
 		// Walk down the tree for each "and" and "or" branch.
 		// Write the op node out once discovered. Otherwise, we are done.
 
 		next := s.fieldOperationTree
 		for {
-			if next.and != nil {
+			if next.and == nil && next.or == nil {
+				// Nothing left to be written.
+				break
+			} else if next.and != nil {
 				next = *next.and
 				sb.WriteString(" AND ")
-				sb.WriteString(next.op.String())
-				continue
-			}
-			if next.or != nil {
+			} else if next.or != nil {
 				next = *next.or
 				sb.WriteString(" OR ")
-				sb.WriteString(next.op.String())
-				continue
 			}
 
-			// Nothing left to be written.
-
-			break
+			// Both branches will append data the same way.
+			query, data := next.op.QueryData()
+			sb.WriteString(query)
+			args = append(args, data)
 		}
 
 		whereClause = sb.String()
@@ -151,10 +153,11 @@ func (s SelectBuilder[T]) BuildQuery() (string, error) {
 
 	var limit string
 	if s.limit != nil {
-		limit = fmt.Sprintf(" LIMIT %d", *s.limit)
+		limit = " LIMIT ?"
+		args = append(args, *s.limit)
 	}
 
-	return fmt.Sprintf("SELECT %s FROM %s%s%s;", fields, tableName, whereClause, limit), nil
+	return fmt.Sprintf("SELECT %s FROM %s%s%s;", fields, tableName, whereClause, limit), args, nil
 }
 
 func (s SelectBuilder[T]) Query(db *sql.DB) ([]T, error) {
@@ -162,12 +165,12 @@ func (s SelectBuilder[T]) Query(db *sql.DB) ([]T, error) {
 }
 
 func (s SelectBuilder[T]) QueryContext(ctx context.Context, db *sql.DB) ([]T, error) {
-	query, err := s.BuildQuery()
+	query, args, err := s.BuildQuery()
 	if err != nil {
 		return nil, err
 	}
 
-	return QueryContext[T](ctx, db, query)
+	return QueryContext[T](ctx, db, query, args...)
 }
 
 func (s SelectBuilder[T]) GetOne(db *sql.DB) (*T, error) {

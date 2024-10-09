@@ -1,5 +1,5 @@
 package qubr
 
 type QueryBuilder interface {
-	BuildQuery() (string, error)
+	BuildQuery() (query string, args []any, err error)
 }

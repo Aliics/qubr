@@ -8,8 +8,8 @@ import (
 
 // QueryContext is a wrapper for sql.DB's QueryContext function.
 // The rows are mapped to T, where each field of T is a column in the row.
-func QueryContext[T any](ctx context.Context, db *sql.DB, query string) ([]T, error) {
-	rows, err := db.QueryContext(ctx, query)
+func QueryContext[T any](ctx context.Context, db *sql.DB, query string, args ...any) ([]T, error) {
+	rows, err := db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

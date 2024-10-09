@@ -11,12 +11,13 @@ func TestSelectAll(t *testing.T) {
 		earLength float64
 	}
 
-	query, err := Select[bunny]().
+	query, args, err := Select[bunny]().
 		From("bunnies").
 		BuildQuery()
 
 	assert.NoError(t, err)
 	assert.Equal(t, `SELECT "name","earLength" FROM "bunnies";`, query)
+	assert.Empty(t, args)
 }
 
 func TestSelectDefaultTableName(t *testing.T) {
@@ -25,11 +26,12 @@ func TestSelectDefaultTableName(t *testing.T) {
 		earLength float64
 	}
 
-	query, err := Select[bunny]().
+	query, args, err := Select[bunny]().
 		BuildQuery()
 
 	assert.NoError(t, err)
 	assert.Equal(t, `SELECT "name","earLength" FROM "bunny";`, query)
+	assert.Empty(t, args)
 }
 
 func TestSelectWithSimpleFilter(t *testing.T) {
@@ -39,14 +41,15 @@ func TestSelectWithSimpleFilter(t *testing.T) {
 		ageMonths uint16
 	}
 
-	query, err := Select[bunny]().
+	query, args, err := Select[bunny]().
 		From("bunnies").
 		Where(GreaterThan("earLength", 10)).
 		And(NotEqual("name", "")).
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `SELECT "name","earLength","ageMonths" FROM "bunnies" WHERE "earLength" > 10 AND "name" != '';`, query)
+	assert.Equal(t, `SELECT "name","earLength","ageMonths" FROM "bunnies" WHERE "earLength" > ? AND "name" != ?;`, query)
+	assert.Equal(t, []any{10, ""}, args)
 }
 
 func TestSelectWhereDoubleUp(t *testing.T) {
@@ -56,7 +59,7 @@ func TestSelectWhereDoubleUp(t *testing.T) {
 		ageMonths uint16
 	}
 
-	_, err := Select[bunny]().
+	_, _, err := Select[bunny]().
 		From("bunnies").
 		Where(GreaterThan("earLength", 10)).
 		Where(NotEqual("name", "")).
@@ -71,13 +74,14 @@ func TestSelectBigLimit(t *testing.T) {
 		sprinkled bool
 	}
 
-	query, err := Select[donut]().
+	query, args, err := Select[donut]().
 		From("donuts").
 		Limit(2938910).
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `SELECT "filled","sprinkled" FROM "donuts" LIMIT 2938910;`, query)
+	assert.Equal(t, `SELECT "filled","sprinkled" FROM "donuts" LIMIT ?;`, query)
+	assert.Equal(t, []any{uint64(2938910)}, args)
 }
 
 func TestSelectLimitAlreadySet(t *testing.T) {
@@ -86,7 +90,7 @@ func TestSelectLimitAlreadySet(t *testing.T) {
 		sprinkled bool
 	}
 
-	_, err := Select[donut]().
+	_, _, err := Select[donut]().
 		From("donuts").
 		Limit(1).
 		Limit(2).
