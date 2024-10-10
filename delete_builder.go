@@ -89,6 +89,13 @@ func (b DeleteBuilder[T]) Limit(n uint64) DeleteBuilder[T] {
 	return b
 }
 
+// BuildQuery will construct the SQL query DeleteBuilder is currently representing.
+// User input will utilize placeholders, and the values of the input will be in the 2nd return value, args.
+// If there was an issue in the construction of DeleteBuilder, then the 3rd return value, err will not non-nil.
+//
+// The resulting query should look something like:
+//
+//	DELETE FROM "schema"."table" WHERE "field1" = ? LIMIT ?;
 func (b DeleteBuilder[T]) BuildQuery() (query string, args []any, err error) {
 	if b.err != nil {
 		return "", nil, b.err
@@ -108,10 +115,13 @@ func (b DeleteBuilder[T]) BuildQuery() (query string, args []any, err error) {
 	return fmt.Sprintf("DELETE FROM %s%s%s;", tableName, whereClause, limit), args, nil
 }
 
+// Exec wraps DeleteBuilder.ExecContext, which will execute the delete query represented by the DeleteBuilder.
 func (b DeleteBuilder[T]) Exec(db *sql.DB) (sql.Result, error) {
 	return b.ExecContext(context.Background(), db)
 }
 
+// ExecContext will execute the delete query represented by DeleteBuilder.
+// This will execute using the provided sql.DB, and the response is simply passed back.
 func (b DeleteBuilder[T]) ExecContext(ctx context.Context, db *sql.DB) (sql.Result, error) {
 	query, args, err := b.BuildQuery()
 	if err != nil {

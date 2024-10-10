@@ -100,6 +100,13 @@ func (b SelectBuilder[T]) Limit(n uint64) SelectBuilder[T] {
 	return b
 }
 
+// BuildQuery will construct the SQL query SelectBuilder is currently representing.
+// User input will utilize placeholders, and the values of the input will be in the 2nd return value, args.
+// If there was an issue in the construction of SelectBuilder, then the 3rd return value, err will not non-nil.
+//
+// The resulting query should look something like:
+//
+//	SELECT "field1", "field2" FROM "schema"."table" WHERE "field1" = ? LIMIT ?;
 func (b SelectBuilder[T]) BuildQuery() (query string, args []any, err error) {
 	if b.err != nil {
 		return "", nil, b.err
@@ -139,10 +146,14 @@ func (b SelectBuilder[T]) BuildQuery() (query string, args []any, err error) {
 	return fmt.Sprintf("SELECT %s FROM %s%s%s;", fields, tableName, whereClause, limit), args, nil
 }
 
+// Query wraps SelectBuilder.QueryContext, this will use the query represented by SelectBuilder.
+// The row results are all mapped to T.
 func (b SelectBuilder[T]) Query(db *sql.DB) ([]T, error) {
 	return b.QueryContext(context.Background(), db)
 }
 
+// QueryContext will use the query represented by the SelectBuilder, utilizing the sql.DB provided.
+// The results are all mapped to T.
 func (b SelectBuilder[T]) QueryContext(ctx context.Context, db *sql.DB) ([]T, error) {
 	query, args, err := b.BuildQuery()
 	if err != nil {
@@ -152,10 +163,14 @@ func (b SelectBuilder[T]) QueryContext(ctx context.Context, db *sql.DB) ([]T, er
 	return QueryContext[T](ctx, db, query, args...)
 }
 
+// GetOne wraps SelectBuilder.GetOneContext, this will use the query represented by SelectBuilder.
+// There is the expectation that at least one result is returned. The first result will be mapped to T.
 func (b SelectBuilder[T]) GetOne(db *sql.DB) (*T, error) {
 	return b.GetOneContext(context.Background(), db)
 }
 
+// GetOneContext will use the query represented by the SelectBuilder, utilizing the sql.DB provided.
+// There is the expectation that at least one result is returned. The first result will be mapped to T.
 func (b SelectBuilder[T]) GetOneContext(ctx context.Context, db *sql.DB) (*T, error) {
 	ts, err := b.QueryContext(ctx, db)
 	if err != nil {

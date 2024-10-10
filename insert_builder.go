@@ -47,6 +47,13 @@ func (b InsertBuilder[T]) Values(t ...T) InsertBuilder[T] {
 	return b
 }
 
+// BuildQuery will construct the SQL query InsertBuilder is currently representing.
+// User input will utilize placeholders, and the values of the input will be in the 2nd return value, args.
+// If there was an issue in the construction of InsertBuilder, then the 3rd return value, err will not non-nil.
+//
+// The resulting query should look something like:
+//
+//	INSERT INTO "table" VALUES (?, ?, ?);
 func (b InsertBuilder[T]) BuildQuery() (query string, args []any, err error) {
 	if b.err != nil {
 		return "", nil, b.err
@@ -98,10 +105,13 @@ func (b InsertBuilder[T]) BuildQuery() (query string, args []any, err error) {
 	return fmt.Sprintf("INSERT INTO %s%s;", tableName, values), args, nil
 }
 
+// Exec wraps InsertBuilder.ExecContext, which will execute the insert query represented by the InsertBuilder.
 func (b InsertBuilder[T]) Exec(db *sql.DB) (sql.Result, error) {
 	return b.ExecContext(context.Background(), db)
 }
 
+// ExecContext will execute the insert query represented by the InsertBuilder.
+// This will execute using the provided sql.DB, and the response is simply passed back.
 func (b InsertBuilder[T]) ExecContext(ctx context.Context, db *sql.DB) (sql.Result, error) {
 	query, args, err := b.BuildQuery()
 	if err != nil {
