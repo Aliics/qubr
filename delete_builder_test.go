@@ -32,7 +32,7 @@ func TestDeleteWithSimpleFilter(t *testing.T) {
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `DELETE FROM "food" WHERE "Kilojoules" < ? AND "Name" != ?;`, query)
+	assert.Equal(t, `DELETE FROM "food" WHERE "Kilojoules" < ? AND "Name" <> ?;`, query)
 	assert.Equal(t, []any{415, "mold"}, args)
 }
 

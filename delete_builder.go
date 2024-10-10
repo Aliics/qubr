@@ -88,7 +88,7 @@ func (b DeleteBuilder[T]) BuildQuery() (query string, args []any, err error) {
 
 	tableName := b.from.String()
 
-	whereClause, whereArgs := b.fieldOperationTree.BuildQuery()
+	whereClause, whereArgs := b.fieldOperationTree.buildQuery()
 	args = append(args, whereArgs...)
 
 	var limit string

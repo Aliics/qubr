@@ -58,9 +58,9 @@ func Test_fieldOperationTree_BuildQuery(t1 *testing.T) {
 				or:  tt.fields.or,
 				and: tt.fields.and,
 			}
-			gotQuery, gotArgs := t.BuildQuery()
-			assert.Equalf(t1, tt.wantQuery, gotQuery, "BuildQuery()")
-			assert.Equalf(t1, tt.wantArgs, gotArgs, "BuildQuery()")
+			gotQuery, gotArgs := t.buildQuery()
+			assert.Equalf(t1, tt.wantQuery, gotQuery, "buildQuery()")
+			assert.Equalf(t1, tt.wantArgs, gotArgs, "buildQuery()")
 		})
 	}
 }

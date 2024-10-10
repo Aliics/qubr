@@ -111,7 +111,7 @@ func (b UpdateBuilder[T]) BuildQuery() (query string, args []any, err error) {
 		setStmt = strings.TrimSuffix(sb.String(), ", ")
 	}
 
-	whereClause, whereArgs := b.fieldOperationTree.BuildQuery()
+	whereClause, whereArgs := b.fieldOperationTree.buildQuery()
 	args = append(args, whereArgs...)
 
 	return fmt.Sprintf("UPDATE %s%s%s;", tableName, setStmt, whereClause), args, nil

@@ -5,6 +5,9 @@ import (
 	"strings"
 )
 
+// FieldOperation represents some field comparison operation utilizing an Operator.
+// It is not recommended to construct a FieldOperation directly, instead, use one of the constructing functions like
+// Equal or In.
 type FieldOperation struct {
 	Operator Operator
 
@@ -12,7 +15,7 @@ type FieldOperation struct {
 	ValueRaw  any
 }
 
-func (f FieldOperation) QueryData() (string, []any) {
+func (f FieldOperation) queryData() (string, []any) {
 	var (
 		placeholders string
 		args         []any
@@ -35,6 +38,7 @@ func (f FieldOperation) QueryData() (string, []any) {
 	return fmt.Sprintf(`"%s" %s %s`, f.FieldName, f.Operator, placeholders), args
 }
 
+// Operator is a type representing one of the various comparison operators in ANSI SQL (ISO 9075).
 type Operator uint8
 
 const (
@@ -54,7 +58,7 @@ func (o Operator) String() string {
 	case OperatorEqual:
 		s = "="
 	case OperatorNotEqual:
-		s = "!="
+		s = "<>"
 	case OperatorGreaterThan:
 		s = ">"
 	case OperatorLessThan:
@@ -162,7 +166,8 @@ func NotIn(field string, values ...any) FieldOperation {
 	return FieldOperation{OperatorNotIn, field, values}
 }
 
-func (t fieldOperationTree) BuildQuery() (string, []any) {
+// buildQuery will construct a where clause for SQL queries.
+func (t fieldOperationTree) buildQuery() (string, []any) {
 	if t == emptyFieldOperationTree {
 		return "", nil
 	}
@@ -175,7 +180,7 @@ func (t fieldOperationTree) BuildQuery() (string, []any) {
 
 	sb.WriteString(" WHERE ")
 
-	query, data := t.op.QueryData()
+	query, data := t.op.queryData()
 	sb.WriteString(query)
 	args = append(args, data...)
 
@@ -196,7 +201,7 @@ func (t fieldOperationTree) BuildQuery() (string, []any) {
 		}
 
 		// Both branches will append data the same way.
-		query, data := next.op.QueryData()
+		query, data := next.op.queryData()
 		sb.WriteString(query)
 		args = append(args, data...)
 	}

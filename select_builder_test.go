@@ -65,7 +65,7 @@ func TestSelectWithSimpleFilter(t *testing.T) {
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `SELECT "Name", "EarLength", "AgeMonths" FROM "bunnies" WHERE "EarLength" > ? AND "Name" != ?;`, query)
+	assert.Equal(t, `SELECT "Name", "EarLength", "AgeMonths" FROM "bunnies" WHERE "EarLength" > ? AND "Name" <> ?;`, query)
 	assert.Equal(t, []any{10, ""}, args)
 }
 
