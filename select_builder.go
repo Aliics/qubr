@@ -15,9 +15,9 @@ import (
 //	query, args, err := Select[User]().
 //		Where(Equal("ID", 42)).
 //		BuildQuery() // Or QueryContext to run perform the query.
-//	 if err != nil {
-//	 	return err
-//	 }
+//	if err != nil {
+//		return err
+//	}
 type SelectBuilder[T any] struct {
 	from tableName
 
