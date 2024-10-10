@@ -12,8 +12,27 @@ type FieldOperation struct {
 	ValueRaw  any
 }
 
-func (f FieldOperation) QueryData() (string, any) {
-	return fmt.Sprintf(`"%s"%s?`, f.FieldName, f.Operator), f.ValueRaw
+func (f FieldOperation) QueryData() (string, []any) {
+	var (
+		placeholders string
+		args         []any
+	)
+	{
+		argArr, isArr := f.ValueRaw.([]any)
+
+		if !isArr && f.Operator != OperatorIn && f.Operator != OperatorNotIn {
+			// Our "ValueRaw" is not an array of any, and it's not some kind of in operator.
+			placeholders = "?"
+			args = []any{f.ValueRaw}
+		} else {
+			// (?,?,?)
+			points := strings.Repeat("?,", len(argArr))
+			placeholders = fmt.Sprintf("(%s)", strings.TrimSuffix(points, ","))
+			args = argArr
+		}
+	}
+
+	return fmt.Sprintf(`"%s"%s%s`, f.FieldName, f.Operator, placeholders), args
 }
 
 type Operator uint8
@@ -25,6 +44,8 @@ const (
 	OperatorLessThan
 	OperatorGreaterThanOrEqual
 	OperatorLessThanOrEqual
+	OperatorIn
+	OperatorNotIn
 )
 
 func (o Operator) String() string {
@@ -42,6 +63,10 @@ func (o Operator) String() string {
 		s = ">="
 	case OperatorLessThanOrEqual:
 		s = "<="
+	case OperatorIn:
+		s = "IN"
+	case OperatorNotIn:
+		s = "NOT IN"
 	}
 	return s
 }
@@ -87,6 +112,14 @@ func IsFalse(field string) FieldOperation {
 	return FieldOperation{OperatorEqual, field, false}
 }
 
+func In(field string, values ...any) FieldOperation {
+	return FieldOperation{OperatorIn, field, values}
+}
+
+func NotIn(field string, values ...any) FieldOperation {
+	return FieldOperation{OperatorNotIn, field, values}
+}
+
 func (t fieldOperationTree) BuildQuery() (string, []any) {
 	if t == emptyFieldOperationTree {
 		return "", nil
@@ -102,7 +135,7 @@ func (t fieldOperationTree) BuildQuery() (string, []any) {
 
 	query, data := t.op.QueryData()
 	sb.WriteString(query)
-	args = append(args, data)
+	args = append(args, data...)
 
 	// Walk down the tree for each "and" and "or" branch.
 	// Write the op node out once discovered. Otherwise, we are done.
@@ -123,7 +156,7 @@ func (t fieldOperationTree) BuildQuery() (string, []any) {
 		// Both branches will append data the same way.
 		query, data := next.op.QueryData()
 		sb.WriteString(query)
-		args = append(args, data)
+		args = append(args, data...)
 	}
 
 	return sb.String(), args
