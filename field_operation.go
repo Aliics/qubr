@@ -80,42 +80,84 @@ type fieldOperationTree struct {
 
 var emptyFieldOperationTree = fieldOperationTree{}
 
+// Equal is a wrapper for constructing a FieldOperation with an OperatorEqual passed in.
+// Equivalent SQL will be:
+//
+//	"field" = ?
 func Equal(field string, v any) FieldOperation {
 	return FieldOperation{OperatorEqual, field, v}
 }
 
+// NotEqual is a wrapper for constructing a FieldOperation with an OperatorNotEqual passed in.
+// Equivalent SQL will be:
+//
+//	"field" != ?
 func NotEqual(field string, v any) FieldOperation {
 	return FieldOperation{OperatorNotEqual, field, v}
 }
 
+// GreaterThan is a wrapper for constructing a FieldOperation with an OperatorGreaterThan passed in.
+// Equivalent SQL will be:
+//
+//	"field" > ?
 func GreaterThan(field string, v any) FieldOperation {
 	return FieldOperation{OperatorGreaterThan, field, v}
 }
 
+// LessThan is a wrapper for constructing a FieldOperation with an OperatorLessThan passed in.
+// Equivalent SQL will be:
+//
+//	"field" < ?
 func LessThan(field string, v any) FieldOperation {
 	return FieldOperation{OperatorLessThan, field, v}
 }
 
+// GreaterThanOrEqual is a wrapper for constructing a FieldOperation with an OperatorGreaterThanOrEqual passed in.
+// Equivalent SQL will be:
+//
+//	"field" >= ?
 func GreaterThanOrEqual(field string, v any) FieldOperation {
 	return FieldOperation{OperatorGreaterThanOrEqual, field, v}
 }
 
+// LessThanOrEqual is a wrapper for constructing a FieldOperation with an OperatorLessThanOrEqual passed in.
+// Equivalent SQL will be:
+//
+//	"field" <= ?
 func LessThanOrEqual(field string, v any) FieldOperation {
 	return FieldOperation{OperatorLessThanOrEqual, field, v}
 }
 
+// IsTrue is a wrapper for constructing a FieldOperation with an OperatorIsTrue passed in.
+// Since it's just a boolean comparison, we utilize Equal to do this.
+// Equivalent SQL will be:
+//
+//	"field" = TRUE
 func IsTrue(field string) FieldOperation {
-	return FieldOperation{OperatorEqual, field, true}
+	return Equal(field, true)
 }
 
+// IsFalse is a wrapper for constructing a FieldOperation with an OperatorIsFalse passed in.
+// Since it's just a boolean comparison, we utilize Equal to do this.
+// Equivalent SQL will be:
+//
+//	"field" = FALSE
 func IsFalse(field string) FieldOperation {
-	return FieldOperation{OperatorEqual, field, false}
+	return Equal(field, false)
 }
 
+// In is a wrapper for constructing a FieldOperation with an OperatorIn passed in.
+// Equivalent SQL will be:
+//
+//	"field" IN (?, ...)
 func In(field string, values ...any) FieldOperation {
 	return FieldOperation{OperatorIn, field, values}
 }
 
+// NotIn is a wrapper for constructing a FieldOperation with an OperatorNotIn passed in.
+// Equivalent SQL will be:
+//
+//	"field" NOT IN (?, ...)
 func NotIn(field string, values ...any) FieldOperation {
 	return FieldOperation{OperatorNotIn, field, values}
 }
