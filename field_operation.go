@@ -26,13 +26,13 @@ func (f FieldOperation) QueryData() (string, []any) {
 			args = []any{f.ValueRaw}
 		} else {
 			// (?,?,?)
-			points := strings.Repeat("?,", len(argArr))
-			placeholders = fmt.Sprintf("(%s)", strings.TrimSuffix(points, ","))
+			points := strings.Repeat("?, ", len(argArr))
+			placeholders = fmt.Sprintf("(%s)", strings.TrimSuffix(points, ", "))
 			args = argArr
 		}
 	}
 
-	return fmt.Sprintf(`"%s"%s%s`, f.FieldName, f.Operator, placeholders), args
+	return fmt.Sprintf(`"%s" %s %s`, f.FieldName, f.Operator, placeholders), args
 }
 
 type Operator uint8

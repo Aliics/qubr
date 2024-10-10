@@ -104,11 +104,11 @@ func (b UpdateBuilder[T]) BuildQuery() (query string, args []any, err error) {
 				continue
 			}
 
-			sb.WriteString(fmt.Sprintf(`"%s"=?,`, fieldType.Name))
+			sb.WriteString(fmt.Sprintf(`"%s" = ?, `, fieldType.Name))
 			args = append(args, insertValue.Field(i).Interface())
 		}
 
-		setStmt = strings.TrimSuffix(sb.String(), ",")
+		setStmt = strings.TrimSuffix(sb.String(), ", ")
 	}
 
 	whereClause, whereArgs := b.fieldOperationTree.BuildQuery()

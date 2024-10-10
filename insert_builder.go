@@ -76,7 +76,7 @@ func (b InsertBuilder[T]) BuildQuery() (query string, args []any, err error) {
 			insertValue := reflect.ValueOf(v)
 
 			// (?,?)
-			placeholders := strings.TrimSuffix(strings.Repeat("?,", numExported), ",") // Remove trailing comma.
+			placeholders := strings.TrimSuffix(strings.Repeat("?, ", numExported), ", ") // Remove trailing comma.
 			sb.WriteString(fmt.Sprintf("(%s)", placeholders))
 
 			for i := range numExported {
@@ -84,7 +84,7 @@ func (b InsertBuilder[T]) BuildQuery() (query string, args []any, err error) {
 			}
 
 			if i < len(b.literalValues)-1 {
-				sb.WriteRune(',')
+				sb.WriteString(", ")
 			}
 		}
 

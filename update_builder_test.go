@@ -16,7 +16,7 @@ func TestUpdate(t *testing.T) {
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `UPDATE "bunny" SET "Name"=?,"EarLength"=?;`, query)
+	assert.Equal(t, `UPDATE "bunny" SET "Name" = ?, "EarLength" = ?;`, query)
 	assert.Equal(t, []any{"king oliver", 30.0}, args)
 }
 
@@ -32,7 +32,7 @@ func TestUpdateWithSimpleFilter(t *testing.T) {
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `UPDATE "bunny" SET "Name"=?,"EarLength"=? WHERE "Name"=?;`, query)
+	assert.Equal(t, `UPDATE "bunny" SET "Name" = ?, "EarLength" = ? WHERE "Name" = ?;`, query)
 	assert.Equal(t, []any{"king oliver", 30.0, "mr. oliver"}, args)
 }
 

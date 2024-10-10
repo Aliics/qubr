@@ -19,7 +19,7 @@ func TestInsert(t *testing.T) {
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `INSERT INTO "bunny" VALUES (?,?),(?,?);`, query)
+	assert.Equal(t, `INSERT INTO "bunny" VALUES (?, ?), (?, ?);`, query)
 	assert.Equal(t, []any{"oliver", 20.0, "king ollie", 30.0}, args)
 }
 
@@ -39,7 +39,7 @@ func TestInsertWithUnexported(t *testing.T) {
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `INSERT INTO "bunny" VALUES (?,?),(?,?);`, query)
+	assert.Equal(t, `INSERT INTO "bunny" VALUES (?, ?), (?, ?);`, query)
 	assert.Equal(t, []any{"oliver", 20.0, "king ollie", 30.0}, args)
 }
 

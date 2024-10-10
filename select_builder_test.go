@@ -16,7 +16,7 @@ func TestSelectAll(t *testing.T) {
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `SELECT "Name","EarLength" FROM "bunnies";`, query)
+	assert.Equal(t, `SELECT "Name", "EarLength" FROM "bunnies";`, query)
 	assert.Empty(t, args)
 }
 
@@ -33,7 +33,7 @@ func TestSelectAllWithUnexported(t *testing.T) {
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `SELECT "Name","EarLength" FROM "bunnies";`, query)
+	assert.Equal(t, `SELECT "Name", "EarLength" FROM "bunnies";`, query)
 	assert.Empty(t, args)
 }
 
@@ -47,7 +47,7 @@ func TestSelectDefaultTableName(t *testing.T) {
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `SELECT "Name","EarLength" FROM "bunny";`, query)
+	assert.Equal(t, `SELECT "Name", "EarLength" FROM "bunny";`, query)
 	assert.Empty(t, args)
 }
 
@@ -65,7 +65,7 @@ func TestSelectWithSimpleFilter(t *testing.T) {
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `SELECT "Name","EarLength","AgeMonths" FROM "bunnies" WHERE "EarLength">? AND "Name"!=?;`, query)
+	assert.Equal(t, `SELECT "Name", "EarLength", "AgeMonths" FROM "bunnies" WHERE "EarLength" > ? AND "Name" != ?;`, query)
 	assert.Equal(t, []any{10, ""}, args)
 }
 
@@ -97,7 +97,7 @@ func TestSelectBigLimit(t *testing.T) {
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `SELECT "Filled","Sprinkled" FROM "donuts" LIMIT ?;`, query)
+	assert.Equal(t, `SELECT "Filled", "Sprinkled" FROM "donuts" LIMIT ?;`, query)
 	assert.Equal(t, []any{uint64(2938910)}, args)
 }
 

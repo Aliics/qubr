@@ -101,10 +101,10 @@ func (b SelectBuilder[T]) BuildQuery() (query string, args []any, err error) {
 				continue
 			}
 
-			sb.WriteString(fmt.Sprintf(`"%s",`, f.Name))
+			sb.WriteString(fmt.Sprintf(`"%s", `, f.Name))
 		}
 
-		fields = strings.TrimSuffix(sb.String(), ",")
+		fields = strings.TrimSuffix(sb.String(), ", ")
 	}
 
 	tableName := b.from.String()

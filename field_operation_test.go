@@ -22,7 +22,7 @@ func Test_fieldOperationTree_BuildQuery(t1 *testing.T) {
 			fields: fields{
 				op: Equal("Name", "captain spud"),
 			},
-			wantQuery: ` WHERE "Name"=?`,
+			wantQuery: ` WHERE "Name" = ?`,
 			wantArgs:  []any{"captain spud"},
 		},
 		{
@@ -33,7 +33,7 @@ func Test_fieldOperationTree_BuildQuery(t1 *testing.T) {
 					op: Equal("Age", 291),
 				},
 			},
-			wantQuery: ` WHERE "Name"=? AND "Age"=?`,
+			wantQuery: ` WHERE "Name" = ? AND "Age" = ?`,
 			wantArgs:  []any{"captain spud", 291},
 		},
 		{
@@ -47,7 +47,7 @@ func Test_fieldOperationTree_BuildQuery(t1 *testing.T) {
 					},
 				},
 			},
-			wantQuery: ` WHERE "FavoriteFood"IN(?,?,?,?,?) AND "Age">=? OR "Deets"=?`,
+			wantQuery: ` WHERE "FavoriteFood" IN (?, ?, ?, ?, ?) AND "Age" >= ? OR "Deets" = ?`,
 			wantArgs:  []any{"kale", "broccoli", "bok choi", "lettuce", "cranberries", 100, 2},
 		},
 	}
@@ -58,9 +58,9 @@ func Test_fieldOperationTree_BuildQuery(t1 *testing.T) {
 				or:  tt.fields.or,
 				and: tt.fields.and,
 			}
-			got, got1 := t.BuildQuery()
-			assert.Equalf(t1, tt.wantQuery, got, "BuildQuery()")
-			assert.Equalf(t1, tt.wantArgs, got1, "BuildQuery()")
+			gotQuery, gotArgs := t.BuildQuery()
+			assert.Equalf(t1, tt.wantQuery, gotQuery, "BuildQuery()")
+			assert.Equalf(t1, tt.wantArgs, gotArgs, "BuildQuery()")
 		})
 	}
 }
