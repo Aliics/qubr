@@ -18,12 +18,14 @@ type UpdateBuilder[T any] struct {
 	err error
 }
 
+// Update will construct a new UpdateBuilder, and the table name will be set based on the type given.
 func Update[T any]() UpdateBuilder[T] {
 	return UpdateBuilder[T]{
-		from: tableName{tableName: reflect.TypeFor[T]().Name()},
+		from: tableName{forType: reflect.TypeFor[T]()},
 	}
 }
 
+// Into will explicitly set the table name. This cannot be called more once.
 func (b UpdateBuilder[T]) Into(tableName string) UpdateBuilder[T] {
 	if b.from.schema != "" && b.from.tableName != "" {
 		b.err = ErrTableNameAlreadySet
@@ -44,6 +46,8 @@ func (b UpdateBuilder[T]) SetStruct(t T) UpdateBuilder[T] {
 	return b
 }
 
+// Where will apply a FieldOperation as the initial comparison operator of a where clause.
+// Where cannot be called more than once, use UpdateBuilder.And or UpdateBuilder.Or for further filtering.
 func (b UpdateBuilder[T]) Where(op FieldOperation) UpdateBuilder[T] {
 	if b.fieldOperationTree != emptyFieldOperationTree {
 		b.err = ErrDoubleWhereClause
@@ -55,6 +59,7 @@ func (b UpdateBuilder[T]) Where(op FieldOperation) UpdateBuilder[T] {
 	return b
 }
 
+// And will apply an AND to the existing where clause. UpdateBuilder.Where must be called before this.
 func (b UpdateBuilder[T]) And(op FieldOperation) UpdateBuilder[T] {
 	err := appendToFieldOperationTree(&b.fieldOperationTree, func(next *fieldOperationTree) {
 		next.and = &fieldOperationTree{op: op}
@@ -65,6 +70,7 @@ func (b UpdateBuilder[T]) And(op FieldOperation) UpdateBuilder[T] {
 	return b
 }
 
+// Or will apply an OR to the existing where clause. UpdateBuilder.Where must be called before this.
 func (b UpdateBuilder[T]) Or(op FieldOperation) UpdateBuilder[T] {
 	err := appendToFieldOperationTree(&b.fieldOperationTree, func(next *fieldOperationTree) {
 		next.or = &fieldOperationTree{op: op}

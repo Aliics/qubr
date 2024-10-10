@@ -8,6 +8,16 @@ import (
 	"strings"
 )
 
+// SelectBuilder is a QueryBuilder for building SQL SELECT queries.
+// Utilizing the related Select functions, you can construct these queries.
+// Example:
+//
+//	query, args, err := Select[User]().
+//		Where(Equal("ID", 42)).
+//		BuildQuery() // Or QueryContext to run perform the query.
+//	 if err != nil {
+//	 	return err
+//	 }
 type SelectBuilder[T any] struct {
 	from tableName
 
@@ -18,12 +28,14 @@ type SelectBuilder[T any] struct {
 	err error
 }
 
+// Select will construct a new SelectBuilder, and the table name will be set based on the type given.
 func Select[T any]() SelectBuilder[T] {
 	return SelectBuilder[T]{
-		from: tableName{tableName: reflect.TypeFor[T]().Name()},
+		from: tableName{forType: reflect.TypeFor[T]()},
 	}
 }
 
+// From will explicitly set the table name. This cannot be called more once.
 func (b SelectBuilder[T]) From(tableName string) SelectBuilder[T] {
 	if b.from.schema != "" && b.from.tableName != "" {
 		b.err = ErrTableNameAlreadySet
@@ -39,6 +51,8 @@ func (b SelectBuilder[T]) From(tableName string) SelectBuilder[T] {
 	return b
 }
 
+// Where will apply a FieldOperation as the initial comparison operator of a where clause.
+// Where cannot be called more than once, use SelectBuilder.And or SelectBuilder.Or for further filtering.
 func (b SelectBuilder[T]) Where(op FieldOperation) SelectBuilder[T] {
 	if b.fieldOperationTree != emptyFieldOperationTree {
 		b.err = ErrDoubleWhereClause
@@ -50,6 +64,7 @@ func (b SelectBuilder[T]) Where(op FieldOperation) SelectBuilder[T] {
 	return b
 }
 
+// And will apply an AND to the existing where clause. SelectBuilder.Where must be called before this.
 func (b SelectBuilder[T]) And(op FieldOperation) SelectBuilder[T] {
 	err := appendToFieldOperationTree(&b.fieldOperationTree, func(next *fieldOperationTree) {
 		next.and = &fieldOperationTree{op: op}
@@ -60,6 +75,7 @@ func (b SelectBuilder[T]) And(op FieldOperation) SelectBuilder[T] {
 	return b
 }
 
+// Or will apply an OR to the existing where clause. SelectBuilder.Where must be called before this.
 func (b SelectBuilder[T]) Or(op FieldOperation) SelectBuilder[T] {
 	err := appendToFieldOperationTree(&b.fieldOperationTree, func(next *fieldOperationTree) {
 		next.or = &fieldOperationTree{op: op}
@@ -70,6 +86,8 @@ func (b SelectBuilder[T]) Or(op FieldOperation) SelectBuilder[T] {
 	return b
 }
 
+// Limit will apply a limit to the select statement. Limiting the number of rows resulting from your table.
+// This cannot be called more than once.
 func (b SelectBuilder[T]) Limit(n uint64) SelectBuilder[T] {
 	if b.limit != nil {
 		// This was probably not set intentionally by the caller, and it's sort of undefined behaviour.

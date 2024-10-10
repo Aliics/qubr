@@ -17,12 +17,14 @@ type DeleteBuilder[T any] struct {
 	err error
 }
 
+// Delete will construct a new DeleteBuilder, and the table name will be set based on the type given.
 func Delete[T any]() DeleteBuilder[T] {
 	return DeleteBuilder[T]{
-		from: tableName{tableName: reflect.TypeFor[T]().Name()},
+		from: tableName{forType: reflect.TypeFor[T]()},
 	}
 }
 
+// From will explicitly set the table name. This cannot be called more once.
 func (b DeleteBuilder[T]) From(tableName string) DeleteBuilder[T] {
 	if b.from.schema != "" && b.from.tableName != "" {
 		b.err = ErrTableNameAlreadySet
@@ -38,6 +40,8 @@ func (b DeleteBuilder[T]) From(tableName string) DeleteBuilder[T] {
 	return b
 }
 
+// Where will apply a FieldOperation as the initial comparison operator of a where clause.
+// Where cannot be called more than once, use DeleteBuilder.And or DeleteBuilder.Or for further filtering.
 func (b DeleteBuilder[T]) Where(op FieldOperation) DeleteBuilder[T] {
 	if b.fieldOperationTree != emptyFieldOperationTree {
 		b.err = ErrDoubleWhereClause
@@ -49,6 +53,7 @@ func (b DeleteBuilder[T]) Where(op FieldOperation) DeleteBuilder[T] {
 	return b
 }
 
+// And will apply an AND to the existing where clause. DeleteBuilder.Where must be called before this.
 func (b DeleteBuilder[T]) And(op FieldOperation) DeleteBuilder[T] {
 	err := appendToFieldOperationTree(&b.fieldOperationTree, func(next *fieldOperationTree) {
 		next.and = &fieldOperationTree{op: op}
@@ -59,6 +64,7 @@ func (b DeleteBuilder[T]) And(op FieldOperation) DeleteBuilder[T] {
 	return b
 }
 
+// Or will apply an OR to the existing where clause. DeleteBuilder.Where must be called before this.
 func (b DeleteBuilder[T]) Or(op FieldOperation) DeleteBuilder[T] {
 	err := appendToFieldOperationTree(&b.fieldOperationTree, func(next *fieldOperationTree) {
 		next.or = &fieldOperationTree{op: op}
@@ -69,6 +75,8 @@ func (b DeleteBuilder[T]) Or(op FieldOperation) DeleteBuilder[T] {
 	return b
 }
 
+// Limit will apply a limit to the select statement. Limiting the number of rows resulting from your table.
+// This cannot be called more than once.
 func (b DeleteBuilder[T]) Limit(n uint64) DeleteBuilder[T] {
 	if b.limit != nil {
 		// This was probably not set intentionally by the caller, and it's sort of undefined behaviour.

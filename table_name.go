@@ -2,10 +2,12 @@ package qubr
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 )
 
 type tableName struct {
+	forType   reflect.Type
 	schema    string
 	tableName string
 }
@@ -29,6 +31,10 @@ func newTableNameFromString(s string) (*tableName, error) {
 }
 
 func (t tableName) String() string {
+	if t.schema == "" && t.tableName == "" {
+		return `"` + t.forType.Name() + `"`
+	}
+
 	if t.schema != "" {
 		return fmt.Sprintf(`"%s"."%s"`, t.schema, t.tableName)
 	}

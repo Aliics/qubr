@@ -16,12 +16,14 @@ type InsertBuilder[T any] struct {
 	err error
 }
 
+// Insert will construct a new InsertBuilder, and the table name will be set based on the type given.
 func Insert[T any]() InsertBuilder[T] {
 	return InsertBuilder[T]{
-		into: tableName{tableName: reflect.TypeFor[T]().Name()},
+		into: tableName{forType: reflect.TypeFor[T]()},
 	}
 }
 
+// Into will explicitly set the table name. This cannot be called more once.
 func (b InsertBuilder[T]) Into(tableName string) InsertBuilder[T] {
 	if b.into.schema != "" && b.into.tableName != "" {
 		b.err = ErrTableNameAlreadySet
@@ -38,6 +40,8 @@ func (b InsertBuilder[T]) Into(tableName string) InsertBuilder[T] {
 	return b
 }
 
+// Values will represent the values to be inserted into your table. Each struct given being a row, and its fields
+// being the columns.
 func (b InsertBuilder[T]) Values(t ...T) InsertBuilder[T] {
 	b.literalValues = t
 	return b
