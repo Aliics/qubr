@@ -156,7 +156,7 @@ func TestSelectAndGetOne(t *testing.T) {
 
 	longEaredBunny, err := Select[bunny]().
 		Where(GreaterThan("EarLength", 20)).
-		And(Equal("IsMortal", false)).
+		And(IsFalse("IsMortal")).
 		GetOne(db)
 
 	assert.NoError(t, err)

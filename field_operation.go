@@ -79,6 +79,14 @@ func LessThanOrEqual(field string, v any) FieldOperation {
 	return FieldOperation{OperatorLessThanOrEqual, field, v}
 }
 
+func IsTrue(field string) FieldOperation {
+	return FieldOperation{OperatorEqual, field, true}
+}
+
+func IsFalse(field string) FieldOperation {
+	return FieldOperation{OperatorEqual, field, false}
+}
+
 func (t fieldOperationTree) BuildQuery() (string, []any) {
 	if t == emptyFieldOperationTree {
 		return "", nil
