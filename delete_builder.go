@@ -7,6 +7,16 @@ import (
 	"reflect"
 )
 
+// DeleteBuilder is a QueryBuilder for building SQL DELETE queries.
+// Utilizing the related Delete functions, you can construct these queries.
+// Example:
+//
+//	result, err := Delete[User]().
+//		Where(Equal("ID", 42)).
+//		ExecContext(ctx, db) // Or BuildQuery to use the raw SQL.
+//	if err != nil {
+//		return err
+//	}
 type DeleteBuilder[T any] struct {
 	from tableName
 

@@ -8,6 +8,16 @@ import (
 	"strings"
 )
 
+// InsertBuilder is a QueryBuilder for building SQL INSERT queries.
+// Utilizing the related Insert functions, you can construct these queries.
+// Example:
+//
+//	result, err := Insert[User]().
+//		Values(User{ID: 42, Name: "Alex"}).
+//		ExecContext(ctx, db) // Or BuildQuery to use the raw SQL.
+//	if err != nil {
+//		return err
+//	}
 type InsertBuilder[T any] struct {
 	into tableName
 

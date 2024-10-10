@@ -8,6 +8,17 @@ import (
 	"strings"
 )
 
+// UpdateBuilder is a QueryBuilder for building SQL UPDATE queries.
+// Utilizing the related Update functions, you can construct these queries.
+// Example:
+//
+//	result, err := Update[User]().
+//		SetStruct(User{ID: 42, Name: "Alex"}).
+//		Where(Equal("ID", 42)).
+//		ExecContext(ctx, db) // Or BuildQuery to use the raw SQL.
+//	if err != nil {
+//		return err
+//	}
 type UpdateBuilder[T any] struct {
 	from tableName
 

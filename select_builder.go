@@ -12,9 +12,9 @@ import (
 // Utilizing the related Select functions, you can construct these queries.
 // Example:
 //
-//	query, args, err := Select[User]().
+//	users, err := Select[User]().
 //		Where(Equal("ID", 42)).
-//		BuildQuery() // Or QueryContext to run perform the query.
+//		QueryContext(ctx, db) // Or BuildQuery to use the raw SQL.
 //	if err != nil {
 //		return err
 //	}
