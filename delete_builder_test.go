@@ -7,8 +7,8 @@ import (
 
 func TestDeleteAll(t *testing.T) {
 	type food struct {
-		name       string
-		kilojoules float64
+		Name       string
+		Kilojoules float64
 	}
 
 	query, args, err := Delete[food]().
@@ -22,24 +22,24 @@ func TestDeleteAll(t *testing.T) {
 
 func TestDeleteWithSimpleFilter(t *testing.T) {
 	type food struct {
-		name       string
-		kilojoules float64
+		Name       string
+		Kilojoules float64
 	}
 
 	query, args, err := Delete[food]().
-		Where(LessThan("kilojoules", 415)).
-		And(NotEqual("name", "mold")).
+		Where(LessThan("Kilojoules", 415)).
+		And(NotEqual("Name", "mold")).
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `DELETE FROM "food" WHERE "kilojoules" < ? AND "name" != ?;`, query)
+	assert.Equal(t, `DELETE FROM "food" WHERE "Kilojoules"<? AND "Name"!=?;`, query)
 	assert.Equal(t, []any{415, "mold"}, args)
 }
 
 func TestDeleteWhereDoubleUp(t *testing.T) {
 	type food struct {
-		name       string
-		kilojoules float64
+		Name       string
+		Kilojoules float64
 	}
 
 	_, _, err := Delete[food]().
@@ -52,8 +52,8 @@ func TestDeleteWhereDoubleUp(t *testing.T) {
 
 func TestDeleteBigLimit(t *testing.T) {
 	type food struct {
-		name       string
-		kilojoules float64
+		Name       string
+		Kilojoules float64
 	}
 
 	query, args, err := Delete[food]().
@@ -68,8 +68,8 @@ func TestDeleteBigLimit(t *testing.T) {
 
 func TestDeleteLimitAlreadySet(t *testing.T) {
 	type food struct {
-		name       string
-		kilojoules float64
+		Name       string
+		Kilojoules float64
 	}
 
 	_, _, err := Delete[food]().

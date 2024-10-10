@@ -7,8 +7,8 @@ import (
 
 func TestSelectAll(t *testing.T) {
 	type bunny struct {
-		name      string
-		earLength float64
+		Name      string
+		EarLength float64
 	}
 
 	query, args, err := Select[bunny]().
@@ -16,53 +16,70 @@ func TestSelectAll(t *testing.T) {
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `SELECT "name","earLength" FROM "bunnies";`, query)
+	assert.Equal(t, `SELECT "Name","EarLength" FROM "bunnies";`, query)
+	assert.Empty(t, args)
+}
+
+func TestSelectAllWithUnexported(t *testing.T) {
+	type bunny struct {
+		Name      string
+		EarLength float64
+
+		age int64 // Should be ignored.
+	}
+
+	query, args, err := Select[bunny]().
+		From("bunnies").
+		BuildQuery()
+
+	assert.NoError(t, err)
+	assert.Equal(t, `SELECT "Name","EarLength" FROM "bunnies";`, query)
 	assert.Empty(t, args)
 }
 
 func TestSelectDefaultTableName(t *testing.T) {
 	type bunny struct {
-		name      string
-		earLength float64
+		Name      string
+		EarLength float64
 	}
 
 	query, args, err := Select[bunny]().
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `SELECT "name","earLength" FROM "bunny";`, query)
+	assert.Equal(t, `SELECT "Name","EarLength" FROM "bunny";`, query)
 	assert.Empty(t, args)
 }
 
 func TestSelectWithSimpleFilter(t *testing.T) {
 	type bunny struct {
-		name      string
-		earLength float64
-		ageMonths uint16
+		Name      string
+		EarLength float64
+		AgeMonths uint16
 	}
 
 	query, args, err := Select[bunny]().
 		From("bunnies").
-		Where(GreaterThan("earLength", 10)).
-		And(NotEqual("name", "")).
+		Where(GreaterThan("EarLength", 10)).
+		And(NotEqual("Name", "")).
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `SELECT "name","earLength","ageMonths" FROM "bunnies" WHERE "earLength" > ? AND "name" != ?;`, query)
+	assert.Equal(t, `SELECT "Name","EarLength","AgeMonths" FROM "bunnies" WHERE "EarLength">? AND "Name"!=?;`, query)
 	assert.Equal(t, []any{10, ""}, args)
 }
 
 func TestSelectWhereDoubleUp(t *testing.T) {
 	type bunny struct {
-		name      string
-		earLength float64
-		ageMonths uint16
+		Name      string
+		EarLength float64
+		AgeMonths uint16
 	}
 
 	_, _, err := Select[bunny]().
 		From("bunnies").
-		Where(GreaterThan("earLength", 10)).
-		Where(NotEqual("name", "")).
+		Where(GreaterThan("EarLength", 10)).
+		Where(NotEqual("Name", "")).
 		BuildQuery()
 
 	assert.ErrorIs(t, ErrDoubleWhereClause, err)
@@ -70,8 +87,8 @@ func TestSelectWhereDoubleUp(t *testing.T) {
 
 func TestSelectBigLimit(t *testing.T) {
 	type donut struct {
-		filled    bool
-		sprinkled bool
+		Filled    bool
+		Sprinkled bool
 	}
 
 	query, args, err := Select[donut]().
@@ -80,14 +97,14 @@ func TestSelectBigLimit(t *testing.T) {
 		BuildQuery()
 
 	assert.NoError(t, err)
-	assert.Equal(t, `SELECT "filled","sprinkled" FROM "donuts" LIMIT ?;`, query)
+	assert.Equal(t, `SELECT "Filled","Sprinkled" FROM "donuts" LIMIT ?;`, query)
 	assert.Equal(t, []any{uint64(2938910)}, args)
 }
 
 func TestSelectLimitAlreadySet(t *testing.T) {
 	type donut struct {
-		filled    bool
-		sprinkled bool
+		Filled    bool
+		Sprinkled bool
 	}
 
 	_, _, err := Select[donut]().
@@ -99,10 +116,12 @@ func TestSelectLimitAlreadySet(t *testing.T) {
 	assert.ErrorIs(t, ErrLimitAlreadySet, err)
 }
 
-func TestSelectAndQueryContext(t *testing.T) {
+func TestSelectAndQuery(t *testing.T) {
 	type bunny struct {
 		Name      string
 		EarLength float64
+
+		age int64
 	}
 
 	db := SetupTestDatabase(
@@ -116,10 +135,10 @@ func TestSelectAndQueryContext(t *testing.T) {
 		Query(db)
 
 	assert.NoError(t, err)
-	assert.Equal(t, []bunny{{"ollie", 15}}, bunnies)
+	assert.Equal(t, []bunny{{"ollie", 15, 0}}, bunnies)
 }
 
-func TestSelectAndGetOneContext(t *testing.T) {
+func TestSelectAndGetOne(t *testing.T) {
 	type bunny struct {
 		Name      string
 		EarLength float64

@@ -24,19 +24,27 @@ func QueryContext[T any](ctx context.Context, db *sql.DB, query string, args ...
 		numField := selectType.NumField()
 
 		// Create pointers for "Scan" to populate row values onto a temporary "values" array.
+		numExported := 0 // Our end number of rows may not actually be equal to "numField" due to unexported fields.
 		values := make([]any, numField)
 		for i := range numField {
-			field := mappedValue.Field(i).Interface()
-			values[i] = &field
+			f := mappedValue.Field(i)
+			if !f.CanSet() {
+				continue
+			}
+
+			field := f.Interface()
+			values[numExported] = &field
+
+			numExported++
 		}
 
 		// Pull out the row values.
-		if err = rows.Scan(values...); err != nil {
+		if err = rows.Scan(values[:numExported]...); err != nil {
 			return nil, err
 		}
 
 		// Set the row values onto a new "T", field by field.
-		for i := range numField {
+		for i := range numExported {
 			mappedValue.Field(i).Set(reflect.ValueOf(*values[i].(*any)))
 		}
 

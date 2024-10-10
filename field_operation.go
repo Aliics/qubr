@@ -13,7 +13,7 @@ type FieldOperation struct {
 }
 
 func (f FieldOperation) QueryData() (string, any) {
-	return fmt.Sprintf(`"%s" %s ?`, f.FieldName, f.Operator), f.ValueRaw
+	return fmt.Sprintf(`"%s"%s?`, f.FieldName, f.Operator), f.ValueRaw
 }
 
 type Operator uint8

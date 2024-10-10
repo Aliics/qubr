@@ -58,23 +58,37 @@ func (b InsertBuilder[T]) BuildQuery() (query string, args []any, err error) {
 			return "", nil, ErrNoInsertValues
 		}
 
-		values += " VALUES "
+		// Determine the number of settable fields on the struct.
+		insertType := reflect.TypeFor[T]()
+		var numExported int
+		for i := range insertType.NumField() {
+			f := insertType.Field(i)
+			if !f.IsExported() {
+				continue
+			}
+
+			numExported++
+		}
+
+		sb := strings.Builder{}
+		sb.WriteString(" VALUES ")
 		for i, v := range b.literalValues {
 			insertValue := reflect.ValueOf(v)
-			numField := insertValue.NumField()
 
 			// (?,?)
-			placeholders := strings.TrimSuffix(strings.Repeat("?,", numField), ",") // Remove trailing comma.
-			values += fmt.Sprintf("(%s)", placeholders)
+			placeholders := strings.TrimSuffix(strings.Repeat("?,", numExported), ",") // Remove trailing comma.
+			sb.WriteString(fmt.Sprintf("(%s)", placeholders))
 
-			for i := range numField {
+			for i := range numExported {
 				args = append(args, insertValue.Field(i).Interface())
 			}
 
 			if i < len(b.literalValues)-1 {
-				values += ","
+				sb.WriteRune(',')
 			}
 		}
+
+		values = sb.String()
 	}
 
 	return fmt.Sprintf("INSERT INTO %s%s;", tableName, values), args, nil

@@ -87,6 +87,7 @@ func (b SelectBuilder[T]) BuildQuery() (query string, args []any, err error) {
 		return "", nil, b.err
 	}
 
+	// "X","Y"
 	var fields string
 	{
 		// Struct field names are how we determine the select.
@@ -95,14 +96,15 @@ func (b SelectBuilder[T]) BuildQuery() (query string, args []any, err error) {
 
 		sb := strings.Builder{}
 		for i := range numField {
-			sb.WriteString(`"` + selectType.Field(i).Name + `"`)
-			if i < numField-1 {
-				// Last field won't need a comma.
-				sb.WriteRune(',')
+			f := selectType.Field(i)
+			if !f.IsExported() {
+				continue
 			}
+
+			sb.WriteString(fmt.Sprintf(`"%s",`, f.Name))
 		}
 
-		fields = sb.String()
+		fields = strings.TrimSuffix(sb.String(), ",")
 	}
 
 	tableName := b.from.String()

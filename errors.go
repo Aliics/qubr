@@ -15,6 +15,8 @@ var (
 
 	ErrNoInsertValues = errors.New("insert statement has no insert values")
 
+	ErrNoSetStatement = errors.New("update statement has no insert values")
+
 	ErrNoRows = errors.New("get resulted in no rows")
 )
 
