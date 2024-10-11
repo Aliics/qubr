@@ -172,6 +172,10 @@ func (b SelectBuilder[T]) GetOne(db *sql.DB) (*T, error) {
 // GetOneContext will use the query represented by the SelectBuilder, utilizing the sql.DB provided.
 // There is the expectation that at least one result is returned. The first result will be mapped to T.
 func (b SelectBuilder[T]) GetOneContext(ctx context.Context, db *sql.DB) (*T, error) {
+	// Set the limit to 1, so we don't over-query.
+	l := uint64(1)
+	b.limit = &l
+
 	ts, err := b.QueryContext(ctx, db)
 	if err != nil {
 		return nil, err
