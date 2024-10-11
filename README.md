@@ -14,7 +14,6 @@ package main
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"github.com/aliics/qubr"
 )
