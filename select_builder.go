@@ -126,7 +126,7 @@ func (b SelectBuilder[T]) BuildQuery() (query string, args []any, err error) {
 				continue
 			}
 
-			sb.WriteString(fmt.Sprintf(`"%s", `, f.Name))
+			sb.WriteString(fmt.Sprintf(`"%s", `, structFieldName(f)))
 		}
 
 		fields = strings.TrimSuffix(sb.String(), ", ")

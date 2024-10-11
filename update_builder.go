@@ -123,12 +123,12 @@ func (b UpdateBuilder[T]) BuildQuery() (query string, args []any, err error) {
 		insertValue := reflect.ValueOf(*b.literalValue)
 		numField := insertValue.NumField()
 		for i := range numField {
-			fieldType := insertType.Field(i)
-			if !fieldType.IsExported() {
+			f := insertType.Field(i)
+			if !f.IsExported() {
 				continue
 			}
 
-			sb.WriteString(fmt.Sprintf(`"%s" = ?, `, fieldType.Name))
+			sb.WriteString(fmt.Sprintf(`"%s" = ?, `, structFieldName(f)))
 			args = append(args, insertValue.Field(i).Interface())
 		}
 

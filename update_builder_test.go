@@ -20,6 +20,21 @@ func TestUpdate(t *testing.T) {
 	assert.Equal(t, []any{"king oliver", 30.0}, args)
 }
 
+func TestUpdateWithDBTags(t *testing.T) {
+	type bunny struct {
+		Name      string  `db:"name"`
+		EarLength float64 `db:"ear_length"`
+	}
+
+	query, args, err := Update[bunny]().
+		SetStruct(bunny{"king oliver", 30}).
+		BuildQuery()
+
+	assert.NoError(t, err)
+	assert.Equal(t, `UPDATE "bunny" SET "name" = ?, "ear_length" = ?;`, query)
+	assert.Equal(t, []any{"king oliver", 30.0}, args)
+}
+
 func TestUpdateWithSimpleFilter(t *testing.T) {
 	type bunny struct {
 		Name      string

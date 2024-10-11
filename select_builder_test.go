@@ -37,6 +37,21 @@ func TestSelectAllWithUnexported(t *testing.T) {
 	assert.Empty(t, args)
 }
 
+func TestSelectAllWithDBTags(t *testing.T) {
+	type bunny struct {
+		Name      string  `db:"name"`
+		EarLength float64 `db:"ear_length"`
+	}
+
+	query, args, err := Select[bunny]().
+		From("bunnies").
+		BuildQuery()
+
+	assert.NoError(t, err)
+	assert.Equal(t, `SELECT "name", "ear_length" FROM "bunnies";`, query)
+	assert.Empty(t, args)
+}
+
 func TestSelectDefaultTableName(t *testing.T) {
 	type bunny struct {
 		Name      string
