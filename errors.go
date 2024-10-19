@@ -28,3 +28,12 @@ type ErrInvalidTableName struct {
 func (e ErrInvalidTableName) Error() string {
 	return fmt.Sprintf(`"%s" is not a valid table name`, e.Name)
 }
+
+// ErrUnknownFieldName occurs when a string provided cannot be used as a field name.
+type ErrUnknownFieldName struct {
+	Name string
+}
+
+func (e ErrUnknownFieldName) Error() string {
+	return fmt.Sprintf(`"%s" is not a valid field name`, e.Name)
+}

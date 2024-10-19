@@ -66,6 +66,38 @@ func TestSelectDefaultTableName(t *testing.T) {
 	assert.Empty(t, args)
 }
 
+func TestSelectWithSelectFields(t *testing.T) {
+	type bunny struct {
+		Name      string
+		EarLength float64 `db:"ear_length"`
+		AgeMonths uint16
+	}
+
+	query, args, err := Select[bunny]().
+		From("bunnies").
+		WithFields("AgeMonths", "ear_length").
+		BuildQuery()
+
+	assert.NoError(t, err)
+	assert.Equal(t, `SELECT "AgeMonths", "ear_length" FROM "bunnies";`, query)
+	assert.Empty(t, args)
+}
+
+func TestSelectWithUnknownSelectFields(t *testing.T) {
+	type bunny struct {
+		Name      string
+		EarLength float64
+		AgeMonths uint16
+	}
+
+	_, _, err := Select[bunny]().
+		From("bunnies").
+		WithFields("Sauce").
+		BuildQuery()
+
+	assert.ErrorIs(t, ErrUnknownFieldName{"Sauce"}, err)
+}
+
 func TestSelectWithSimpleFilter(t *testing.T) {
 	type bunny struct {
 		Name      string

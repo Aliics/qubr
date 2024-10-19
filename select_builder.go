@@ -19,7 +19,8 @@ import (
 //		return err
 //	}
 type SelectBuilder[T any] struct {
-	from tableName
+	from         tableName
+	selectFields *[]string
 
 	fieldOperationTree fieldOperationTree
 
@@ -48,6 +49,29 @@ func (b SelectBuilder[T]) From(tableName string) SelectBuilder[T] {
 	}
 
 	b.from = *t
+	return b
+}
+
+// WithFields allows the selection of very specific fields, instead of all fields in the struct.
+// The field needs to exist on the struct, and it has to be the name we will use in the query.
+func (b SelectBuilder[T]) WithFields(names ...string) SelectBuilder[T] {
+	selectType := reflect.TypeFor[T]()
+
+nameExists:
+	for _, name := range names {
+		// Iterate over the fields in the struct for each of the names, checking if the "structFieldName" results in
+		// the name provided. If not, then this name cannot be used.
+		for i := range selectType.NumField() {
+			if structFieldName(selectType.Field(i)) == name {
+				break nameExists
+			}
+		}
+
+		b.err = ErrUnknownFieldName{name}
+		return b
+	}
+
+	b.selectFields = &names
 	return b
 }
 
@@ -115,20 +139,29 @@ func (b SelectBuilder[T]) BuildQuery() (query string, args []any, err error) {
 	// "X","Y"
 	var fields string
 	{
-		// Struct field names are how we determine the select.
-		selectType := reflect.TypeFor[T]()
-		numField := selectType.NumField()
-
 		sb := strings.Builder{}
-		for i := range numField {
-			f := selectType.Field(i)
-			if !f.IsExported() {
-				continue
+		if b.selectFields != nil {
+			// Use select fields instead of the fields present directly on the struct.
+			// We have already validated that these exist.
+			for _, name := range *b.selectFields {
+				sb.WriteString(fmt.Sprintf(`"%s", `, name))
 			}
+		} else {
+			// Struct field names are how we determine the select.
+			selectType := reflect.TypeFor[T]()
+			numField := selectType.NumField()
 
-			sb.WriteString(fmt.Sprintf(`"%s", `, structFieldName(f)))
+			for i := range numField {
+				f := selectType.Field(i)
+				if !f.IsExported() {
+					continue
+				}
+
+				sb.WriteString(fmt.Sprintf(`"%s", `, structFieldName(f)))
+			}
 		}
 
+		// We don't strictly know the length of the fields, so we need to trim the last comma.
 		fields = strings.TrimSuffix(sb.String(), ", ")
 	}
 
